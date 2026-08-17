@@ -1,0 +1,53 @@
+@{
+    ViewData["Title"] = "Yönetim Paneli";
+}
+
+<h2>Yönetim Paneli</h2>
+
+<div class="row row-cols-1 row-cols-md-3 g-4 mt-2">
+    <div class="col">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Kullanıcılar</h5>
+                <p class="display-6">@ViewBag.UserCount</p>
+                <a asp-action="Users" class="btn btn-outline-primary btn-sm">Kullanıcıları Görüntüle</a>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Makaleler</h5>
+                <p class="display-6">@ViewBag.PostCount</p>
+                <a asp-controller="Post" asp-action="Index" class="btn btn-outline-primary btn-sm">Makaleleri Görüntüle</a>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Kategoriler</h5>
+                <p class="display-6">@ViewBag.CategoryCount</p>
+                <a asp-controller="Category" asp-action="Index" class="btn btn-outline-primary btn-sm">Kategorileri Yönet</a>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center shadow-sm border-warning">
+            <div class="card-body">
+                <h5 class="card-title">Onay Bekleyen Makaleler</h5>
+                <p class="display-6">@ViewBag.PendingPostCount</p>
+                <a asp-controller="Post" asp-action="Pending" class="btn btn-outline-warning btn-sm">İncele</a>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Yorumlar</h5>
+                <p class="display-6">@ViewBag.CommentCount</p>
+                <a asp-controller="Comment" asp-action="Index" class="btn btn-outline-primary btn-sm">Yönet</a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,46 @@
+@model IEnumerable<BlogApp.Models.Post>
+
+@{
+    ViewData["Title"] = "Onay Bekleyen Makaleler";
+}
+
+<h2>Onay Bekleyen Makaleler</h2>
+
+@if (!Model.Any())
+{
+    <p class="text-muted">Onay bekleyen makale yok.</p>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Başlık</th>
+                <th>Yazar</th>
+                <th>Kategori</th>
+                <th>Tarih</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var post in Model)
+            {
+                <tr>
+                    <td>@post.Title</td>
+                    <td>@post.User?.Email</td>
+                    <td>@post.Category?.Name</td>
+                    <td>@post.CreatedDate.ToString("dd.MM.yyyy")</td>
+                    <td class="text-end">
+                        <a asp-action="Details" asp-route-id="@post.Id" class="btn btn-sm btn-outline-secondary">Görüntüle</a>
+                        <form asp-action="Approve" asp-route-id="@post.Id" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-success">Onayla</button>
+                        </form>
+                        <form asp-action="Reject" asp-route-id="@post.Id" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-danger">Reddet</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

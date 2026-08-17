@@ -1,0 +1,28 @@
+@model BlogApp.Models.Post
+
+@{
+    ViewData["Title"] = "Makale Sil";
+}
+
+<h2>Makaleyi Sil</h2>
+
+<div class="alert alert-warning">Bu makaleyi silmek istediğinizden emin misiniz?</div>
+
+<dl class="row">
+    <dt class="col-sm-2">Başlık</dt>
+    <dd class="col-sm-10">@Model.Title</dd>
+
+    <dt class="col-sm-2">Kategori</dt>
+    <dd class="col-sm-10">@Model.Category?.Name</dd>
+
+    <dt class="col-sm-2">Yazar</dt>
+    <dd class="col-sm-10">@Model.User?.Email</dd>
+
+    <dt class="col-sm-2">Tarih</dt>
+    <dd class="col-sm-10">@Model.CreatedDate.ToString("dd.MM.yyyy HH:mm")</dd>
+</dl>
+
+<form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+    <button type="submit" class="btn btn-danger">Evet, Sil</button>
+    <a asp-action="MyPosts" class="btn btn-outline-secondary">Vazgeç</a>
+</form>

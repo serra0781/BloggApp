@@ -1,0 +1,42 @@
+@model IEnumerable<BlogApp.Models.Comment>
+
+@{
+    ViewData["Title"] = "Yorumlar";
+}
+
+<h2>Yorumlar</h2>
+
+@if (!Model.Any())
+{
+    <p class="text-muted">Henüz yorum yapılmamış.</p>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Makale</th>
+                <th>Yazan</th>
+                <th>İçerik</th>
+                <th>Tarih</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var comment in Model)
+            {
+                <tr>
+                    <td><a asp-controller="Post" asp-action="Details" asp-route-id="@comment.PostId">@comment.Post?.Title</a></td>
+                    <td>@comment.User?.Email</td>
+                    <td>@comment.Content</td>
+                    <td>@comment.CreatedDate.ToString("dd.MM.yyyy HH:mm")</td>
+                    <td class="text-end">
+                        <form asp-controller="Comment" asp-action="Delete" asp-route-id="@comment.Id" method="post">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

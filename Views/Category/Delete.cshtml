@@ -1,0 +1,32 @@
+@model BlogApp.Models.Category
+
+@{
+    ViewData["Title"] = "Kategori Sil";
+}
+
+<h2>Kategoriyi Sil</h2>
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+<div class="alert alert-warning">Bu kategoriyi silmek istediğinizden emin misiniz?</div>
+
+<dl class="row">
+    <dt class="col-sm-2">Ad</dt>
+    <dd class="col-sm-10">@Model.Name</dd>
+
+    <dt class="col-sm-2">Makale Sayısı</dt>
+    <dd class="col-sm-10">@Model.Posts.Count</dd>
+</dl>
+
+@if (Model.Posts.Any())
+{
+    <div class="alert alert-danger">Bu kategoriye bağlı makaleler bulunduğu için silinemez. Önce makaleleri başka bir kategoriye taşıyın veya silin.</div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Geri Dön</a>
+}
+else
+{
+    <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+        <button type="submit" class="btn btn-danger">Evet, Sil</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Vazgeç</a>
+    </form>
+}

@@ -1,0 +1,65 @@
+@using BlogApp.Models
+@model IEnumerable<BlogApp.Models.Post>
+
+@{
+    ViewData["Title"] = "Makalelerim";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Makalelerim</h2>
+    <a asp-action="Create" class="btn btn-primary">Yeni Makale</a>
+</div>
+
+@if (TempData["InfoMessage"] != null)
+{
+    <div class="alert alert-info">@TempData["InfoMessage"]</div>
+}
+
+@if (!Model.Any())
+{
+    <p class="text-muted">Henüz makale oluşturmadınız.</p>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Başlık</th>
+                <th>Kategori</th>
+                <th>Durum</th>
+                <th>Tarih</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var post in Model)
+            {
+                var badgeClass = post.Status switch
+                {
+                    PostStatus.Approved => "bg-success",
+                    PostStatus.Pending => "bg-warning text-dark",
+                    PostStatus.Rejected => "bg-danger",
+                    _ => "bg-secondary"
+                };
+                var badgeText = post.Status switch
+                {
+                    PostStatus.Approved => "Onaylandı",
+                    PostStatus.Pending => "Onay Bekliyor",
+                    PostStatus.Rejected => "Reddedildi",
+                    _ => post.Status.ToString()
+                };
+                <tr>
+                    <td>@post.Title</td>
+                    <td>@post.Category?.Name</td>
+                    <td><span class="badge @badgeClass">@badgeText</span></td>
+                    <td>@post.CreatedDate.ToString("dd.MM.yyyy")</td>
+                    <td class="text-end">
+                        <a asp-action="Details" asp-route-id="@post.Id" class="btn btn-sm btn-outline-secondary">Görüntüle</a>
+                        <a asp-action="Edit" asp-route-id="@post.Id" class="btn btn-sm btn-outline-primary">Düzenle</a>
+                        <a asp-action="Delete" asp-route-id="@post.Id" class="btn btn-sm btn-outline-danger">Sil</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -1,0 +1,17 @@
+@model BlogApp.Models.Post
+
+<div class="col">
+    <div class="card h-100 shadow-sm">
+        <div class="card-body">
+            <span class="badge bg-secondary mb-2">@Model.Category?.Name</span>
+            <h5 class="card-title">@Model.Title</h5>
+            <p class="card-text text-muted">
+                @(Model.Content.Length > 150 ? Model.Content.Substring(0, 150) + "..." : Model.Content)
+            </p>
+        </div>
+        <div class="card-footer d-flex justify-content-between align-items-center bg-white">
+            <small class="text-muted">@Model.User?.Email &middot; @Model.CreatedDate.ToString("dd.MM.yyyy")</small>
+            <a asp-controller="Post" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-sm btn-primary">Devamını Oku</a>
+        </div>
+    </div>
+</div>

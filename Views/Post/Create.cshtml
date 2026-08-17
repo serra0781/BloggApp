@@ -1,0 +1,23 @@
+@model BlogApp.Models.ViewModels.PostViewModel
+
+@{
+    ViewData["Title"] = "Yeni Makale";
+}
+
+<h2>Yeni Makale</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Create" method="post">
+            <partial name="_PostForm" />
+            <button type="submit" class="btn btn-primary">Kaydet</button>
+            <a asp-action="MyPosts" class="btn btn-outline-secondary">Vazgeç</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

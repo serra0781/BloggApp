@@ -1,14 +1,30 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using BlogApp.Models;
 
 namespace BlogApp.Controllers;
 
 public class HomeController : Controller
 {
-    public IActionResult Index()
+    private readonly ApplicationDbContext _context;
+
+    public HomeController(ApplicationDbContext context)
     {
-        return View();
+        _context = context;
+    }
+
+    public async Task<IActionResult> Index()
+    {
+        var latestPosts = await _context.Posts
+            .Include(p => p.User)
+            .Include(p => p.Category)
+            .Where(p => p.Status == PostStatus.Approved)
+            .OrderByDescending(p => p.CreatedDate)
+            .Take(5)
+            .ToListAsync();
+
+        return View(latestPosts);
     }
 
     public IActionResult Privacy()

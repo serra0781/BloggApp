@@ -1,0 +1,30 @@
+@model IEnumerable<BlogApp.Models.ViewModels.UserListItemViewModel>
+
+@{
+    ViewData["Title"] = "Kullanıcılar";
+}
+
+<h2>Kullanıcılar</h2>
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Roller</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.Email</td>
+                <td>
+                    @foreach (var role in user.Roles)
+                    {
+                        <span class="badge bg-info text-dark me-1">@role</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
