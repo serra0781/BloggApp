@@ -1,23 +1,27 @@
 # BlogApp
 
-A blog platform built with **ASP.NET Core MVC**, **Entity Framework Core**, and **ASP.NET Core Identity**.
+This is a blog platform I've been building during my internship to practice ASP.NET Core MVC.
+
+The idea is simple: writers submit articles, but an admin has to approve them before they show up publicly. Besides that there's category management, comments (which admins can moderate), and user profiles with a bio and a photo.
 
 ## Features
 
-- **Role-based access**: Admin and Author roles with different permissions
-- **Article approval workflow**: authors submit posts, admins approve/reject them before they go public
-- **Categories & comments**: category management, comment moderation
-- **User profiles**: bio, profile photo upload, public author pages
-- **Image uploads**: post cover images and profile photos, with extension/size validation
+- Two roles: Admin and Author, each with different permissions
+- Articles go through a Pending → Approved/Rejected flow
+- Comment system with moderation
+- Profile photos and post cover images (with size/format checks)
+- Data access is split into a service layer instead of being crammed into the controllers
 
-## Architecture
-
-Controllers are kept thin — all data access and business rules live in a dedicated **service layer** (`Services/`), each exposed through an interface and registered via dependency injection. This keeps controllers focused on HTTP concerns while the actual logic (ownership checks, approval rules, etc.) stays testable and reusable.
-
-## Tech Stack
+## Built with
 
 - ASP.NET Core MVC (.NET 9)
-- Entity Framework Core + SQL Server
-- ASP.NET Core Identity (authentication, roles, account lockout)
+- Entity Framework Core
+- SQL Server
+- ASP.NET Core Identity for login/roles
 
-## Getting Started
+## Running locally
+
+```bash
+dotnet restore
+dotnet ef database update
+dotnet run
