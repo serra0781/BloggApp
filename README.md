@@ -1,4 +1,3 @@
-cat > README.md << 'EOF'
 # BlogApp
 
 A blog platform built with **ASP.NET Core MVC**, **Entity Framework Core**, and **ASP.NET Core Identity**.
