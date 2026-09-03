@@ -1,0 +1,54 @@
+@model BlogApp.Models.ViewModels.ProfileEditViewModel
+
+@{
+    ViewData["Title"] = "Profili Düzenle";
+}
+
+<h1 class="hero-mast mt-3 mt-md-4" style="font-size: clamp(1.8rem, 5vw, 3rem);">Profili Düzenle</h1>
+
+<div class="row mt-3">
+    <div class="col-md-6">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3 text-center text-md-start">
+                @if (!string.IsNullOrEmpty(Model.CurrentPhotoPath))
+                {
+                    <img src="@Model.CurrentPhotoPath" alt="Profil fotoğrafı" class="profile-photo-lg" />
+                }
+                else
+                {
+                    <span class="avatar" style="width:110px;height:110px;font-size:2.6rem;background:#@AvatarHelper.GetColor(User.Identity!.Name);">@AvatarHelper.GetInitial(User.Identity!.Name)</span>
+                }
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="ProfilePhoto" class="form-label"></label>
+                <input asp-for="ProfilePhoto" type="file" accept=".jpg,.jpeg,.png,.webp" class="form-control" />
+                <span asp-validation-for="ProfilePhoto" class="text-danger"></span>
+                <div class="form-text">JPG, PNG veya WEBP — en fazla 2 MB.</div>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="FullName" class="form-label"></label>
+                <input asp-for="FullName" class="form-control" placeholder="Adınız Soyadınız" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Bio" class="form-label"></label>
+                <textarea asp-for="Bio" class="form-control" rows="4" placeholder="Kendinizden kısaca bahsedin..."></textarea>
+                <span asp-validation-for="Bio" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn-editorial-solid">Kaydet</button>
+            <a asp-action="Index" class="btn-editorial">Vazgeç</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

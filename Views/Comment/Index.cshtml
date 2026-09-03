@@ -2,9 +2,8 @@
 
 @{
     ViewData["Title"] = "Yorumlar";
+    Layout = "_AdminLayout";
 }
-
-<h2>Yorumlar</h2>
 
 @if (!Model.Any())
 {
@@ -27,7 +26,12 @@ else
             {
                 <tr>
                     <td><a asp-controller="Post" asp-action="Details" asp-route-id="@comment.PostId">@comment.Post?.Title</a></td>
-                    <td>@comment.User?.Email</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="avatar" style="width:28px;height:28px;font-size:0.75rem;background:#@AvatarHelper.GetColor(comment.User?.Email);">@AvatarHelper.GetInitial(comment.User?.Email)</span>
+                            <span>@comment.User?.Email</span>
+                        </div>
+                    </td>
                     <td>@comment.Content</td>
                     <td>@comment.CreatedDate.ToString("dd.MM.yyyy HH:mm")</td>
                     <td class="text-end">

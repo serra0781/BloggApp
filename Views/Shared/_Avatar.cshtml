@@ -1,0 +1,29 @@
+@model BlogApp.Models.ViewModels.AvatarViewModel
+@{
+    var sizeStyle = $"width:{Model.Size}px;height:{Model.Size}px;font-size:{Model.Size * 0.42}px;";
+    var hasLink = !string.IsNullOrEmpty(Model.LinkUserId);
+}
+@if (hasLink)
+{
+    <a asp-controller="Profile" asp-action="Details" asp-route-id="@Model.LinkUserId" class="avatar-link">
+        @if (!string.IsNullOrEmpty(Model.PhotoPath))
+        {
+            <img src="@Model.PhotoPath" alt="@Model.Email" class="avatar-photo" style="@sizeStyle" />
+        }
+        else
+        {
+            <span class="avatar" style="@sizeStyle background:#@AvatarHelper.GetColor(Model.Email);">@AvatarHelper.GetInitial(Model.Email)</span>
+        }
+    </a>
+}
+else
+{
+    if (!string.IsNullOrEmpty(Model.PhotoPath))
+    {
+        <img src="@Model.PhotoPath" alt="@Model.Email" class="avatar-photo" style="@sizeStyle" />
+    }
+    else
+    {
+        <span class="avatar" style="@sizeStyle background:#@AvatarHelper.GetColor(Model.Email);">@AvatarHelper.GetInitial(Model.Email)</span>
+    }
+}

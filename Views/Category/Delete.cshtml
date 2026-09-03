@@ -2,9 +2,8 @@
 
 @{
     ViewData["Title"] = "Kategori Sil";
+    Layout = "_AdminLayout";
 }
-
-<h2>Kategoriyi Sil</h2>
 
 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -21,12 +20,12 @@
 @if (Model.Posts.Any())
 {
     <div class="alert alert-danger">Bu kategoriye bağlı makaleler bulunduğu için silinemez. Önce makaleleri başka bir kategoriye taşıyın veya silin.</div>
-    <a asp-action="Index" class="btn btn-outline-secondary">Geri Dön</a>
+    <a asp-action="Index" class="btn-editorial">Geri Dön</a>
 }
 else
 {
     <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
-        <button type="submit" class="btn btn-danger">Evet, Sil</button>
-        <a asp-action="Index" class="btn btn-outline-secondary">Vazgeç</a>
+        <button type="submit" class="btn-editorial-solid">Evet, Sil</button>
+        <a asp-action="Index" class="btn-editorial">Vazgeç</a>
     </form>
 }

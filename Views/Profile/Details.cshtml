@@ -1,0 +1,63 @@
+@model BlogApp.Models.ViewModels.ProfileViewModel
+
+@{
+    ViewData["Title"] = Model.FullName ?? Model.Email;
+}
+
+<div class="row gy-4 mt-2 align-items-start">
+    <div class="col-md-4 text-center text-md-start">
+        @if (!string.IsNullOrEmpty(Model.PhotoPath))
+        {
+            <img src="@Model.PhotoPath" alt="@Model.Email" class="profile-photo-lg mb-3" />
+        }
+        else
+        {
+            <span class="avatar mb-3" style="width:110px;height:110px;font-size:2.6rem;background:#@AvatarHelper.GetColor(Model.Email);">@AvatarHelper.GetInitial(Model.Email)</span>
+        }
+
+        <h1 style="font-weight: 800; font-size: 1.6rem;">@(Model.FullName ?? Model.Email)</h1>
+        <p class="text-muted mb-2">@Model.Email</p>
+
+        <div class="mb-3">
+            @foreach (var role in Model.Roles)
+            {
+                <span class="tag-pill me-1">@role</span>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Bio))
+        {
+            <p style="white-space: pre-line;">@Model.Bio</p>
+        }
+        else if (Model.IsOwnProfile)
+        {
+            <p class="text-muted fst-italic">Henüz kendinizden bahsetmediniz.</p>
+        }
+
+        @if (Model.IsOwnProfile)
+        {
+            <a asp-action="Edit" class="btn-editorial mt-2">Profili Düzenle</a>
+        }
+    </div>
+
+    <div class="col-md-8">
+        <div class="hairline-thin mb-3"></div>
+        <h2 style="font-family: var(--font-sans); font-weight: 800; font-size: 1.25rem;">
+            @(Model.IsOwnProfile ? "Makalelerim" : "Makaleleri")
+        </h2>
+
+        @if (!Model.Posts.Any())
+        {
+            <p class="text-muted">Henüz yayınlanmış bir makale yok.</p>
+        }
+        else
+        {
+            <div class="row row-cols-1 row-cols-md-2 g-4 mt-1">
+                @foreach (var post in Model.Posts)
+                {
+                    @await Html.PartialAsync("_PostCard", post)
+                }
+            </div>
+        }
+    </div>
+</div>

@@ -1,23 +1,79 @@
-@model IEnumerable<BlogApp.Models.Post>
+@model BlogApp.Models.ViewModels.HomeViewModel
 
 @{
     ViewData["Title"] = "Ana Sayfa";
+    var featured = Model.FeaturedPost;
 }
 
-<div class="text-center mb-4">
-    <h1 class="display-4">BlogApp'e Hoş Geldiniz</h1>
-    <p class="lead">Yazarlarımızın en son paylaştığı makaleleri keşfedin.</p>
-    <a asp-controller="Post" asp-action="Index" class="btn btn-outline-primary">Tüm Makaleleri Gör</a>
+<h1 class="hero-mast mt-4 mt-md-5 fade-up">Fikir &amp; Kalem</h1>
+
+<div class="news-ticker mt-3 mb-4 fade-up fade-up-delay-1">
+    <div class="d-flex align-items-center">
+        <span class="ticker-label">Son Makaleler+++</span>
+        <div class="ticker-track">
+            @{
+                var tickerTitles = Model.LatestPosts.Select(p => p.Title).ToList();
+                if (featured != null) { tickerTitles.Insert(0, featured.Title); }
+            }
+            @if (tickerTitles.Any())
+            {
+                @string.Join("   +++   ", tickerTitles)
+            }
+            else
+            {
+                @:Henüz makale yok
+            }
+        </div>
+    </div>
 </div>
 
-@if (!Model.Any())
+@if (featured != null)
 {
-    <p class="text-center text-muted">Henüz yayınlanmış bir makale yok.</p>
+    <a asp-controller="Post" asp-action="Details" asp-route-id="@featured.Id" class="text-decoration-none d-block mb-4 fade-up fade-up-delay-2">
+        <div class="row gy-3 align-items-start">
+            <div class="col-md-6">
+                <span class="tag-pill mb-2 d-inline-block" style="border-color: var(--gold); background: var(--gold); color: var(--ink);">★ En Çok Okunan</span>
+                <span class="tag-pill mb-2 d-inline-block ms-1">@featured.Category?.Name</span>
+                <h2 style="font-weight: 800; font-size: 2rem; line-height: 1.05; color: var(--ink);">@featured.Title</h2>
+                <div class="byline mt-2 d-flex align-items-center gap-2 flex-wrap">
+                    <partial name="_Avatar" model="@(new BlogApp.Models.ViewModels.AvatarViewModel { Email = featured.User?.Email, PhotoPath = featured.User?.ProfilePhotoPath, Size = 24 })" />
+                    <span><span class="byline-label">Yazar</span>@(featured.User?.FullName ?? featured.User?.Email)</span>
+                    <span><span class="byline-label">Tarih</span>@featured.CreatedDate.ToString("dd.MM.yyyy")</span>
+                    <partial name="_ViewCount" model="@featured.ViewCount" />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <p class="text-muted mb-0">
+                    @(featured.Content.Length > 220 ? featured.Content.Substring(0, 220) + "..." : featured.Content)
+                </p>
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(featured.ImagePath))
+        {
+            <div class="editorial-media mt-4" style="aspect-ratio: 21 / 8; background-image:url('@featured.ImagePath'); background-size:cover; background-position:center;"></div>
+        }
+        else
+        {
+            <div class="editorial-media mt-4" style="aspect-ratio: 21 / 8;">
+                <span class="initial" style="font-size: 8rem;">@(featured.Title.Length > 0 ? featured.Title.Substring(0, 1).ToUpper() : "?")</span>
+            </div>
+        }
+    </a>
+}
+
+<div class="hairline pt-3 mb-3 d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <h2 style="font-family: var(--font-sans); font-weight: 800; font-size: 1.4rem; margin: 0;">Diğer Makaleler</h2>
+    <a asp-controller="Post" asp-action="Index" class="btn-editorial">Tüm Makaleleri Gör</a>
+</div>
+
+@if (!Model.LatestPosts.Any())
+{
+    <p class="text-muted">Henüz başka makale yok.</p>
 }
 else
 {
-    <div class="row row-cols-1 row-cols-md-2 g-4">
-        @foreach (var post in Model)
+    <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+        @foreach (var post in Model.LatestPosts)
         {
             @await Html.PartialAsync("_PostCard", post)
         }

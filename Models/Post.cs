@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Identity;
 
 namespace BlogApp.Models
 {
@@ -18,13 +17,18 @@ namespace BlogApp.Models
 
         [Required]
         public string UserId { get; set; } = string.Empty;
-        public IdentityUser? User { get; set; }
+        public ApplicationUser? User { get; set; }
 
         [Required(ErrorMessage = "Kategori seçilmelidir.")]
         public int CategoryId { get; set; }
         public Category? Category { get; set; }
 
         public PostStatus Status { get; set; } = PostStatus.Pending;
+
+        public int ViewCount { get; set; } = 0;
+
+        // wwwroot altındaki göreli yol, örn. "/uploads/posts/12.jpg". Yüklenmemişse null.
+        public string? ImagePath { get; set; }
 
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }

@@ -1,29 +1,25 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using BlogApp.Models;
 using BlogApp.Models.ViewModels;
+using BlogApp.Services.Interfaces;
+using BlogApp.Services.Results;
 
 namespace BlogApp.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class CategoryController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ICategoryService _categoryService;
 
-        public CategoryController(ApplicationDbContext context)
+        public CategoryController(ICategoryService categoryService)
         {
-            _context = context;
+            _categoryService = categoryService;
         }
 
         // GET: /Category
         public async Task<IActionResult> Index()
         {
-            var categories = await _context.Categories
-                .Include(c => c.Posts)
-                .OrderBy(c => c.Name)
-                .ToListAsync();
-
+            var categories = await _categoryService.GetAllWithPostsAsync();
             return View(categories);
         }
 
@@ -42,8 +38,7 @@ namespace BlogApp.Controllers
                 return View(model);
             }
 
-            _context.Categories.Add(new Category { Name = model.Name });
-            await _context.SaveChangesAsync();
+            await _categoryService.CreateAsync(model.Name);
 
             return RedirectToAction(nameof(Index));
         }
@@ -51,7 +46,7 @@ namespace BlogApp.Controllers
         // GET: /Category/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
-            var category = await _context.Categories.FindAsync(id);
+            var category = await _categoryService.GetByIdAsync(id);
             if (category == null)
             {
                 return NotFound();
@@ -74,14 +69,11 @@ namespace BlogApp.Controllers
                 return View(model);
             }
 
-            var category = await _context.Categories.FindAsync(id);
-            if (category == null)
+            var result = await _categoryService.UpdateAsync(id, model.Name);
+            if (result.Status == ServiceResultStatus.NotFound)
             {
                 return NotFound();
             }
-
-            category.Name = model.Name;
-            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
@@ -89,10 +81,7 @@ namespace BlogApp.Controllers
         // GET: /Category/Delete/5
         public async Task<IActionResult> Delete(int id)
         {
-            var category = await _context.Categories
-                .Include(c => c.Posts)
-                .FirstOrDefaultAsync(c => c.Id == id);
-
+            var category = await _categoryService.GetForDeleteAsync(id);
             if (category == null)
             {
                 return NotFound();
@@ -105,23 +94,19 @@ namespace BlogApp.Controllers
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var category = await _context.Categories
-                .Include(c => c.Posts)
-                .FirstOrDefaultAsync(c => c.Id == id);
+            var result = await _categoryService.DeleteAsync(id);
 
-            if (category == null)
+            if (result.Status == ServiceResultStatus.NotFound)
             {
                 return NotFound();
             }
 
-            if (category.Posts.Any())
+            if (result.Status == ServiceResultStatus.ValidationError)
             {
-                ModelState.AddModelError(string.Empty, "Bu kategoriye bağlı makaleler olduğu için silinemez.");
+                ModelState.AddModelError(string.Empty, result.ErrorMessage!);
+                var category = await _categoryService.GetForDeleteAsync(id);
                 return View("Delete", category);
             }
-
-            _context.Categories.Remove(category);
-            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }

@@ -1,32 +1,28 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using BlogApp.Models;
-using BlogApp.Models.ViewModels;
+using BlogApp.Services.Interfaces;
 
 namespace BlogApp.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly IAdminService _adminService;
 
-        public AdminController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+        public AdminController(IAdminService adminService)
         {
-            _context = context;
-            _userManager = userManager;
+            _adminService = adminService;
         }
 
         // GET: /Admin
         public async Task<IActionResult> Index()
         {
-            ViewBag.UserCount = await _userManager.Users.CountAsync();
-            ViewBag.PostCount = await _context.Posts.CountAsync(p => p.Status == PostStatus.Approved);
-            ViewBag.PendingPostCount = await _context.Posts.CountAsync(p => p.Status == PostStatus.Pending);
-            ViewBag.CategoryCount = await _context.Categories.CountAsync();
-            ViewBag.CommentCount = await _context.Comments.CountAsync();
+            var stats = await _adminService.GetDashboardStatsAsync();
+            ViewBag.UserCount = stats.UserCount;
+            ViewBag.PostCount = stats.PostCount;
+            ViewBag.PendingPostCount = stats.PendingPostCount;
+            ViewBag.CategoryCount = stats.CategoryCount;
+            ViewBag.CommentCount = stats.CommentCount;
 
             return View();
         }
@@ -34,20 +30,7 @@ namespace BlogApp.Controllers
         // GET: /Admin/Users
         public async Task<IActionResult> Users()
         {
-            var users = await _userManager.Users.OrderBy(u => u.Email).ToListAsync();
-            var model = new List<UserListItemViewModel>();
-
-            foreach (var user in users)
-            {
-                var roles = await _userManager.GetRolesAsync(user);
-                model.Add(new UserListItemViewModel
-                {
-                    Id = user.Id,
-                    Email = user.Email ?? user.UserName ?? string.Empty,
-                    Roles = roles
-                });
-            }
-
+            var model = await _adminService.GetUsersAsync();
             return View(model);
         }
     }

@@ -4,24 +4,27 @@
     ViewData["Title"] = "Yazarlar";
 }
 
-<h2>Yazarlar</h2>
+<h1 class="hero-mast mt-3 mt-md-4" style="font-size: clamp(2rem, 6vw, 3.5rem);">Yazarlar</h1>
 
 @if (!Model.Any())
 {
-    <p class="text-muted">Henüz yayınlanmış makalesi olan bir yazar yok.</p>
+    <p class="text-muted mt-3">Henüz yayınlanmış makalesi olan bir yazar yok.</p>
 }
 else
 {
-    <div class="row row-cols-1 row-cols-md-3 g-4">
+    <div class="row row-cols-1 row-cols-md-3 g-4 mt-1">
         @foreach (var author in Model)
         {
             <div class="col">
-                <div class="card h-100 shadow-sm text-center">
-                    <div class="card-body">
-                        <h5 class="card-title">@author.Email</h5>
-                        <p class="text-muted">@author.PostCount makale</p>
-                        <a asp-controller="Post" asp-action="Index" asp-route-authorId="@author.UserId" class="btn btn-outline-primary btn-sm">Makalelerini Gör</a>
+                <div class="editorial-card h-100 text-center p-4" style="border: 1px solid var(--gray-200);">
+                    <div class="mb-3 d-flex justify-content-center">
+                        <partial name="_Avatar" model="@(new BlogApp.Models.ViewModels.AvatarViewModel { Email = author.Email, PhotoPath = author.PhotoPath, Size = 64, LinkUserId = author.UserId })" />
                     </div>
+                    <h3 style="font-weight: 800; font-size: 1.05rem;">
+                        <a asp-controller="Profile" asp-action="Details" asp-route-id="@author.UserId" style="color: inherit;">@(author.FullName ?? author.Email)</a>
+                    </h3>
+                    <p class="text-muted small mb-3">@author.PostCount makale</p>
+                    <a asp-controller="Post" asp-action="Index" asp-route-authorId="@author.UserId" class="btn-editorial">Makalelerini Gör</a>
                 </div>
             </div>
         }

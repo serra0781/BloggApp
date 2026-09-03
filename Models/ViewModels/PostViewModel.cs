@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace BlogApp.Models.ViewModels
@@ -19,5 +20,10 @@ namespace BlogApp.Models.ViewModels
         public int CategoryId { get; set; }
 
         public IEnumerable<SelectListItem>? Categories { get; set; }
+
+        [Display(Name = "Kapak Görseli")]
+        public IFormFile? Image { get; set; }
+
+        public string? CurrentImagePath { get; set; }
     }
 }

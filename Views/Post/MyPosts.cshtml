@@ -5,9 +5,9 @@
     ViewData["Title"] = "Makalelerim";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Makalelerim</h2>
-    <a asp-action="Create" class="btn btn-primary">Yeni Makale</a>
+<div class="d-flex justify-content-between align-items-center mb-3 mt-3">
+    <h1 class="hero-mast" style="font-size: clamp(1.8rem, 5vw, 3rem);">Makalelerim</h1>
+    <a asp-action="Create" class="btn-editorial-solid">Yeni Makale</a>
 </div>
 
 @if (TempData["InfoMessage"] != null)
@@ -27,6 +27,7 @@ else
                 <th>Başlık</th>
                 <th>Kategori</th>
                 <th>Durum</th>
+                <th>Okunma</th>
                 <th>Tarih</th>
                 <th></th>
             </tr>
@@ -52,6 +53,7 @@ else
                     <td>@post.Title</td>
                     <td>@post.Category?.Name</td>
                     <td><span class="badge @badgeClass">@badgeText</span></td>
+                    <td><partial name="_ViewCount" model="@post.ViewCount" /></td>
                     <td>@post.CreatedDate.ToString("dd.MM.yyyy")</td>
                     <td class="text-end">
                         <a asp-action="Details" asp-route-id="@post.Id" class="btn btn-sm btn-outline-secondary">Görüntüle</a>

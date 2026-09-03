@@ -1,21 +1,22 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using BlogApp.Models;
 using BlogApp.Models.ViewModels;
+using BlogApp.Services.Interfaces;
+using BlogApp.Services.Results;
 
 namespace BlogApp.Controllers
 {
     [Authorize]
     public class CommentController : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly ICommentService _commentService;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public CommentController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+        public CommentController(ICommentService commentService, UserManager<ApplicationUser> userManager)
         {
-            _context = context;
+            _commentService = commentService;
             _userManager = userManager;
         }
 
@@ -23,7 +24,7 @@ namespace BlogApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CommentViewModel model)
         {
-            var postExists = await _context.Posts.AnyAsync(p => p.Id == model.PostId);
+            var postExists = await _commentService.PostExistsAsync(model.PostId);
             if (!postExists)
             {
                 return NotFound();
@@ -35,16 +36,8 @@ namespace BlogApp.Controllers
                 return RedirectToAction("Details", "Post", new { id = model.PostId });
             }
 
-            var comment = new Comment
-            {
-                PostId = model.PostId,
-                Content = model.Content,
-                UserId = _userManager.GetUserId(User)!,
-                CreatedDate = DateTime.UtcNow
-            };
-
-            _context.Comments.Add(comment);
-            await _context.SaveChangesAsync();
+            var userId = _userManager.GetUserId(User)!;
+            await _commentService.CreateAsync(model, userId);
 
             return RedirectToAction("Details", "Post", new { id = model.PostId });
         }
@@ -53,35 +46,31 @@ namespace BlogApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
-            var comment = await _context.Comments.FindAsync(id);
-            if (comment == null)
+            var currentUserId = _userManager.GetUserId(User)!;
+            var isAdmin = User.IsInRole("Admin");
+
+            // Redirect için postId gerekiyor; silme öncesi yorumu ayrıca sorgulamamak adına
+            // servis bulunamadı/forbidden durumlarını ServiceResult ile bildiriyor.
+            var lookup = await _commentService.DeleteAsync(id, currentUserId, isAdmin);
+
+            if (lookup.Status == ServiceResultStatus.NotFound)
             {
                 return NotFound();
             }
 
-            var currentUserId = _userManager.GetUserId(User);
-            if (!User.IsInRole("Admin") && comment.UserId != currentUserId)
+            if (lookup.Status == ServiceResultStatus.Forbidden)
             {
                 return Forbid();
             }
 
-            var postId = comment.PostId;
-            _context.Comments.Remove(comment);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Details", "Post", new { id = postId });
+            return RedirectToAction("Details", "Post", new { id = lookup.Data!.PostId });
         }
 
         // GET: /Comment - admin yorum moderasyon listesi
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index()
         {
-            var comments = await _context.Comments
-                .Include(c => c.User)
-                .Include(c => c.Post)
-                .OrderByDescending(c => c.CreatedDate)
-                .ToListAsync();
-
+            var comments = await _commentService.GetAllForModerationAsync();
             return View(comments);
         }
     }

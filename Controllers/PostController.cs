@@ -1,50 +1,46 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+using BlogApp.Helpers;
 using BlogApp.Models;
 using BlogApp.Models.ViewModels;
+using BlogApp.Services.Interfaces;
+using BlogApp.Services.Results;
 
 namespace BlogApp.Controllers
 {
     public class PostController : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly IPostService _postService;
+        private readonly ICategoryService _categoryService;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IWebHostEnvironment _environment;
 
-        public PostController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+        public PostController(IPostService postService, ICategoryService categoryService,
+            UserManager<ApplicationUser> userManager, IWebHostEnvironment environment)
         {
-            _context = context;
+            _postService = postService;
+            _categoryService = categoryService;
             _userManager = userManager;
+            _environment = environment;
         }
 
         // GET: /Post - herkese açık, yalnızca onaylanmış makale listesi
         [AllowAnonymous]
         public async Task<IActionResult> Index(int? categoryId, string? authorId)
         {
-            var query = _context.Posts
-                .Include(p => p.User)
-                .Include(p => p.Category)
-                .Where(p => p.Status == PostStatus.Approved)
-                .AsQueryable();
-
-            if (categoryId.HasValue)
-            {
-                query = query.Where(p => p.CategoryId == categoryId.Value);
-            }
-
             if (!string.IsNullOrEmpty(authorId))
             {
-                query = query.Where(p => p.UserId == authorId);
                 var author = await _userManager.FindByIdAsync(authorId);
                 ViewBag.FilterAuthorEmail = author?.Email;
             }
 
             ViewBag.Categories = new SelectList(
-                await _context.Categories.OrderBy(c => c.Name).ToListAsync(), "Id", "Name", categoryId);
+                await _categoryService.GetAllOrderedAsync(), "Id", "Name", categoryId);
 
-            var posts = await query.OrderByDescending(p => p.CreatedDate).ToListAsync();
+            var posts = await _postService.GetApprovedAsync(categoryId, authorId);
             return View(posts);
         }
 
@@ -52,13 +48,8 @@ namespace BlogApp.Controllers
         [Authorize(Roles = "Yazar,Admin")]
         public async Task<IActionResult> MyPosts()
         {
-            var userId = _userManager.GetUserId(User);
-            var posts = await _context.Posts
-                .Include(p => p.Category)
-                .Where(p => p.UserId == userId)
-                .OrderByDescending(p => p.CreatedDate)
-                .ToListAsync();
-
+            var userId = _userManager.GetUserId(User)!;
+            var posts = await _postService.GetMyPostsAsync(userId);
             return View(posts);
         }
 
@@ -66,13 +57,7 @@ namespace BlogApp.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Pending()
         {
-            var posts = await _context.Posts
-                .Include(p => p.User)
-                .Include(p => p.Category)
-                .Where(p => p.Status == PostStatus.Pending)
-                .OrderBy(p => p.CreatedDate)
-                .ToListAsync();
-
+            var posts = await _postService.GetPendingAsync();
             return View(posts);
         }
 
@@ -81,14 +66,11 @@ namespace BlogApp.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Approve(int id)
         {
-            var post = await _context.Posts.FindAsync(id);
-            if (post == null)
+            var result = await _postService.ApproveAsync(id);
+            if (result.Status == ServiceResultStatus.NotFound)
             {
                 return NotFound();
             }
-
-            post.Status = PostStatus.Approved;
-            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Pending));
         }
@@ -98,14 +80,11 @@ namespace BlogApp.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Reject(int id)
         {
-            var post = await _context.Posts.FindAsync(id);
-            if (post == null)
+            var result = await _postService.RejectAsync(id);
+            if (result.Status == ServiceResultStatus.NotFound)
             {
                 return NotFound();
             }
-
-            post.Status = PostStatus.Rejected;
-            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Pending));
         }
@@ -114,25 +93,22 @@ namespace BlogApp.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Details(int id)
         {
-            var post = await _context.Posts
-                .Include(p => p.User)
-                .Include(p => p.Category)
-                .Include(p => p.Comments.OrderBy(c => c.CreatedDate))
-                    .ThenInclude(c => c.User)
-                .FirstOrDefaultAsync(p => p.Id == id);
+            var currentUserId = _userManager.GetUserId(User);
+            var isAdmin = User.IsInRole("Admin");
 
-            if (post == null)
+            var result = await _postService.GetDetailsAsync(id, currentUserId, isAdmin);
+            if (result.Status == ServiceResultStatus.NotFound)
             {
                 return NotFound();
             }
 
-            // Onay bekleyen/reddedilen makaleleri yalnızca sahibi veya admin görebilir.
-            if (post.Status != PostStatus.Approved && !CanManage(post))
+            if (User.Identity != null && User.Identity.IsAuthenticated)
             {
-                return NotFound();
+                var currentUser = await _userManager.GetUserAsync(User);
+                ViewBag.CurrentUserPhotoPath = currentUser?.ProfilePhotoPath;
             }
 
-            return View(post);
+            return View(result.Data);
         }
 
         // GET: /Post/Create
@@ -141,7 +117,7 @@ namespace BlogApp.Controllers
         {
             var model = new PostViewModel
             {
-                Categories = new SelectList(await _context.Categories.OrderBy(c => c.Name).ToListAsync(), "Id", "Name")
+                Categories = new SelectList(await _categoryService.GetAllOrderedAsync(), "Id", "Name")
             };
 
             return View(model);
@@ -152,26 +128,25 @@ namespace BlogApp.Controllers
         [Authorize(Roles = "Yazar,Admin")]
         public async Task<IActionResult> Create(PostViewModel model)
         {
+            if (model.Image != null && !ImageUploadHelper.IsValidExtension(model.Image))
+            {
+                ModelState.AddModelError(nameof(model.Image), $"Yalnızca {ImageUploadHelper.AllowedExtensionsText} dosyaları yüklenebilir.");
+            }
+            else if (model.Image != null && !ImageUploadHelper.IsValidSize(model.Image))
+            {
+                ModelState.AddModelError(nameof(model.Image), $"Görsel en fazla {ImageUploadHelper.MaxSizeText} olabilir.");
+            }
+
             if (!ModelState.IsValid)
             {
                 model.Categories = new SelectList(
-                    await _context.Categories.OrderBy(c => c.Name).ToListAsync(), "Id", "Name", model.CategoryId);
+                    await _categoryService.GetAllOrderedAsync(), "Id", "Name", model.CategoryId);
                 return View(model);
             }
 
-            var post = new Post
-            {
-                Title = model.Title,
-                Content = model.Content,
-                CategoryId = model.CategoryId,
-                UserId = _userManager.GetUserId(User)!,
-                CreatedDate = DateTime.UtcNow,
-                // Admin'in oluşturduğu makale doğrudan yayınlanır; diğer yazarlarınki onay bekler.
-                Status = User.IsInRole("Admin") ? PostStatus.Approved : PostStatus.Pending
-            };
-
-            _context.Posts.Add(post);
-            await _context.SaveChangesAsync();
+            var userId = _userManager.GetUserId(User)!;
+            var isAdmin = User.IsInRole("Admin");
+            var post = await _postService.CreateAsync(model, userId, isAdmin, _environment.WebRootPath);
 
             TempData["InfoMessage"] = post.Status == PostStatus.Pending
                 ? "Makaleniz admin onayına gönderildi. Onaylandığında herkese açık listede görünecek."
@@ -184,25 +159,30 @@ namespace BlogApp.Controllers
         [Authorize(Roles = "Yazar,Admin")]
         public async Task<IActionResult> Edit(int id)
         {
-            var post = await _context.Posts.FindAsync(id);
-            if (post == null)
+            var userId = _userManager.GetUserId(User)!;
+            var isAdmin = User.IsInRole("Admin");
+
+            var result = await _postService.GetForEditAsync(id, userId, isAdmin);
+            if (result.Status == ServiceResultStatus.NotFound)
             {
                 return NotFound();
             }
 
-            if (!CanManage(post))
+            if (result.Status == ServiceResultStatus.Forbidden)
             {
                 return Forbid();
             }
 
+            var post = result.Data!;
             var model = new PostViewModel
             {
                 Id = post.Id,
                 Title = post.Title,
                 Content = post.Content,
                 CategoryId = post.CategoryId,
+                CurrentImagePath = post.ImagePath,
                 Categories = new SelectList(
-                    await _context.Categories.OrderBy(c => c.Name).ToListAsync(), "Id", "Name", post.CategoryId)
+                    await _categoryService.GetAllOrderedAsync(), "Id", "Name", post.CategoryId)
             };
 
             return View(model);
@@ -218,41 +198,53 @@ namespace BlogApp.Controllers
                 return NotFound();
             }
 
-            var post = await _context.Posts.FindAsync(id);
-            if (post == null)
-            {
-                return NotFound();
-            }
+            var userId = _userManager.GetUserId(User)!;
+            var isAdmin = User.IsInRole("Admin");
 
-            if (!CanManage(post))
+            if (model.Image != null && !ImageUploadHelper.IsValidExtension(model.Image))
             {
-                return Forbid();
+                ModelState.AddModelError(nameof(model.Image), $"Yalnızca {ImageUploadHelper.AllowedExtensionsText} dosyaları yüklenebilir.");
+            }
+            else if (model.Image != null && !ImageUploadHelper.IsValidSize(model.Image))
+            {
+                ModelState.AddModelError(nameof(model.Image), $"Görsel en fazla {ImageUploadHelper.MaxSizeText} olabilir.");
             }
 
             if (!ModelState.IsValid)
             {
+                var existing = await _postService.GetForEditAsync(id, userId, isAdmin);
+                if (existing.Status == ServiceResultStatus.NotFound)
+                {
+                    return NotFound();
+                }
+                if (existing.Status == ServiceResultStatus.Forbidden)
+                {
+                    return Forbid();
+                }
+
+                model.CurrentImagePath = existing.Data!.ImagePath;
                 model.Categories = new SelectList(
-                    await _context.Categories.OrderBy(c => c.Name).ToListAsync(), "Id", "Name", model.CategoryId);
+                    await _categoryService.GetAllOrderedAsync(), "Id", "Name", model.CategoryId);
                 return View(model);
             }
 
-            post.Title = model.Title;
-            post.Content = model.Content;
-            post.CategoryId = model.CategoryId;
+            var result = await _postService.UpdateAsync(id, model, userId, isAdmin, _environment.WebRootPath);
 
-            // Admin dışındaki bir yazar makaleyi düzenlediğinde tekrar onay sürecine girer.
-            if (!User.IsInRole("Admin"))
+            if (result.Status == ServiceResultStatus.NotFound)
             {
-                post.Status = PostStatus.Pending;
+                return NotFound();
             }
 
-            await _context.SaveChangesAsync();
+            if (result.Status == ServiceResultStatus.Forbidden)
+            {
+                return Forbid();
+            }
 
             // Admin başka bir yazarın makalesini düzenlediğinde MyPosts'ta görünmeyeceği için
             // makalenin kendi sayfasına yönlendirilir; yazar ise kendi makale listesine döner.
-            if (User.IsInRole("Admin"))
+            if (isAdmin)
             {
-                return RedirectToAction(nameof(Details), new { id = post.Id });
+                return RedirectToAction(nameof(Details), new { id = result.Data!.Id });
             }
 
             return RedirectToAction(nameof(MyPosts));
@@ -262,22 +254,21 @@ namespace BlogApp.Controllers
         [Authorize(Roles = "Yazar,Admin")]
         public async Task<IActionResult> Delete(int id)
         {
-            var post = await _context.Posts
-                .Include(p => p.Category)
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.Id == id);
+            var userId = _userManager.GetUserId(User)!;
+            var isAdmin = User.IsInRole("Admin");
 
-            if (post == null)
+            var result = await _postService.GetForDeleteAsync(id, userId, isAdmin);
+            if (result.Status == ServiceResultStatus.NotFound)
             {
                 return NotFound();
             }
 
-            if (!CanManage(post))
+            if (result.Status == ServiceResultStatus.Forbidden)
             {
                 return Forbid();
             }
 
-            return View(post);
+            return View(result.Data);
         }
 
         // POST: /Post/Delete/5
@@ -285,38 +276,28 @@ namespace BlogApp.Controllers
         [Authorize(Roles = "Yazar,Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var post = await _context.Posts.FindAsync(id);
-            if (post == null)
+            var userId = _userManager.GetUserId(User)!;
+            var isAdmin = User.IsInRole("Admin");
+
+            var result = await _postService.DeleteAsync(id, userId, isAdmin, _environment.WebRootPath);
+
+            if (result.Status == ServiceResultStatus.NotFound)
             {
                 return NotFound();
             }
 
-            if (!CanManage(post))
+            if (result.Status == ServiceResultStatus.Forbidden)
             {
                 return Forbid();
             }
 
-            _context.Posts.Remove(post);
-            await _context.SaveChangesAsync();
-
             // Silinen makale artık yok; admin herkese açık listeye, yazar kendi listesine döner.
-            if (User.IsInRole("Admin"))
+            if (isAdmin)
             {
                 return RedirectToAction(nameof(Index));
             }
 
             return RedirectToAction(nameof(MyPosts));
-        }
-
-        // Admin her makaleyi yönetebilir; Yazar yalnızca kendi makalesini yönetebilir.
-        private bool CanManage(Post post)
-        {
-            if (User.IsInRole("Admin"))
-            {
-                return true;
-            }
-
-            return post.UserId == _userManager.GetUserId(User);
         }
     }
 }

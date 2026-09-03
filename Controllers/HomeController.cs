@@ -1,30 +1,31 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using BlogApp.Models;
+using BlogApp.Models.ViewModels;
+using BlogApp.Services.Interfaces;
 
 namespace BlogApp.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IPostService _postService;
 
-    public HomeController(ApplicationDbContext context)
+    public HomeController(IPostService postService)
     {
-        _context = context;
+        _postService = postService;
     }
 
     public async Task<IActionResult> Index()
     {
-        var latestPosts = await _context.Posts
-            .Include(p => p.User)
-            .Include(p => p.Category)
-            .Where(p => p.Status == PostStatus.Approved)
-            .OrderByDescending(p => p.CreatedDate)
-            .Take(5)
-            .ToListAsync();
+        var (featured, latest) = await _postService.GetHomeFeedAsync(6);
 
-        return View(latestPosts);
+        var model = new HomeViewModel
+        {
+            FeaturedPost = featured,
+            LatestPosts = latest
+        };
+
+        return View(model);
     }
 
     public IActionResult Privacy()

@@ -2,16 +2,15 @@
 
 @{
     ViewData["Title"] = "Yeni Kategori";
+    Layout = "_AdminLayout";
 }
-
-<h2>Yeni Kategori</h2>
 
 <div class="row">
     <div class="col-md-4">
         <form asp-action="Create" method="post">
             <partial name="_CategoryForm" />
-            <button type="submit" class="btn btn-primary">Kaydet</button>
-            <a asp-action="Index" class="btn btn-outline-secondary">Vazgeç</a>
+            <button type="submit" class="btn-editorial-solid">Kaydet</button>
+            <a asp-action="Index" class="btn-editorial">Vazgeç</a>
         </form>
     </div>
 </div>

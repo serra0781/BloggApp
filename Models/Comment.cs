@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Identity;
 
 namespace BlogApp.Models
 {
@@ -19,6 +18,6 @@ namespace BlogApp.Models
 
         [Required]
         public string UserId { get; set; } = string.Empty;
-        public IdentityUser? User { get; set; }
+        public ApplicationUser? User { get; set; }
     }
 }

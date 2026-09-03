@@ -2,14 +2,13 @@
 
 @{
     ViewData["Title"] = "Kullanıcılar";
+    Layout = "_AdminLayout";
 }
-
-<h2>Kullanıcılar</h2>
 
 <table class="table table-striped align-middle">
     <thead>
         <tr>
-            <th>Email</th>
+            <th>Kullanıcı</th>
             <th>Roller</th>
         </tr>
     </thead>
@@ -17,7 +16,12 @@
         @foreach (var user in Model)
         {
             <tr>
-                <td>@user.Email</td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <partial name="_Avatar" model="@(new BlogApp.Models.ViewModels.AvatarViewModel { Email = user.Email, PhotoPath = user.PhotoPath, Size = 32, LinkUserId = user.Id })" />
+                        <a asp-controller="Profile" asp-action="Details" asp-route-id="@user.Id">@user.Email</a>
+                    </div>
+                </td>
                 <td>
                     @foreach (var role in user.Roles)
                     {

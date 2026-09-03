@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - BlogApp Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+
+        bool IsActive(string controller, string? action = null)
+        {
+            if (!string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+            return action == null || string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <a asp-controller="Admin" asp-action="Index" class="admin-brand">
+                BlogApp
+                <span>Yönetim Paneli</span>
+            </a>
+            <nav>
+                <a asp-controller="Admin" asp-action="Index" class="admin-nav-link @(IsActive("Admin", "Index") ? "active" : "")">Panel</a>
+                <a asp-controller="Admin" asp-action="Users" class="admin-nav-link @(IsActive("Admin", "Users") ? "active" : "")">Kullanıcılar</a>
+                <a asp-controller="Category" asp-action="Index" class="admin-nav-link @(IsActive("Category") ? "active" : "")">Kategoriler</a>
+                <a asp-controller="Post" asp-action="Pending" class="admin-nav-link @(IsActive("Post", "Pending") ? "active" : "")">Onay Bekleyen Makaleler</a>
+                <a asp-controller="Comment" asp-action="Index" class="admin-nav-link @(IsActive("Comment") ? "active" : "")">Yorumlar</a>
+            </nav>
+            <div class="admin-sidebar-footer">
+                <div class="mb-2">
+                    <a asp-controller="Home" asp-action="Index">&larr; Siteye Dön</a>
+                </div>
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    <button type="submit" class="btn btn-link p-0" style="color: #f3c9d6; font-size: 0.78rem; text-decoration: none;">Çıkış Yap</button>
+                </form>
+            </div>
+        </aside>
+        <div class="admin-main">
+            <div class="admin-topbar">
+                <h1>@ViewData["Title"]</h1>
+            </div>
+            <main class="admin-content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

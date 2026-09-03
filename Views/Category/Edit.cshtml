@@ -2,17 +2,16 @@
 
 @{
     ViewData["Title"] = "Kategori Düzenle";
+    Layout = "_AdminLayout";
 }
-
-<h2>Kategori Düzenle</h2>
 
 <div class="row">
     <div class="col-md-4">
         <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
             <input type="hidden" asp-for="Id" />
             <partial name="_CategoryForm" />
-            <button type="submit" class="btn btn-primary">Kaydet</button>
-            <a asp-action="Index" class="btn btn-outline-secondary">Vazgeç</a>
+            <button type="submit" class="btn-editorial-solid">Kaydet</button>
+            <a asp-action="Index" class="btn-editorial">Vazgeç</a>
         </form>
     </div>
 </div>
